@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Reddit Redirector to Old New UI
-// @namespace    http://tampermonkey.net/
-// @version      0.2
+// @namespace    https://github.com/CePur/Reddit-Redirector
+// @version      0.3
 // @description  Redirect to old new reddit
 // @author       CePur
 // @match        *.reddit.com/*
 // @run-at       document-start
 // @grant        none
+// @require      https://raw.githubusercontent.com/CePur/Reddit-Redirector/refs/heads/main/redditRedirector.js
 // ==/UserScript==
 
 (function () {
