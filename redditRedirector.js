@@ -20,7 +20,8 @@
         const hasRedirected = sessionStorage.getItem('hasRedirected') === 'true';
 
         // Step 2: Redirect to submit page if not already there
-        if (!hasRedirected && window.location.hostname === 'www.reddit.com') {
+        // `window.top === window.self` ensures the redirection only happens in the main window, and not iframe widgets in some subreddit sidebar
+        if (!hasRedirected && window.location.hostname === 'www.reddit.com' && window.top === window.self) {
             let currentPage = window.location.pathname + window.location.search;
 
             // Load certain moderator pages in Old New UI
@@ -44,7 +45,7 @@
             document.documentElement.style.setProperty('visibility', 'hidden'); // Don't flash the submit page
             function onLoadEvent() {
                 document.title = "Redirecting to Old New UI...";
-                
+
                 document.querySelector("#AppRouter-main-content button:nth-child(1)")?.click();
                 document.querySelector("#SHORTCUT_FOCUSABLE_DIV header a")?.click();
                 document.querySelector("#SHORTCUT_FOCUSABLE_DIV section footer button:nth-child(1)")?.click();
