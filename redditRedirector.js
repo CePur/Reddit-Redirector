@@ -3,8 +3,10 @@
 // @namespace    https://github.com/CePur/Reddit-Redirector
 // @version      0.3
 // @description  Redirect to old new reddit
-// @author       CePur
-// @match        *.reddit.com/*
+// @author       CePur, u/Skidadlius
+// @contributor  bmndc
+// @match        *://www.reddit.com/*
+// @match        https://www.reddit.com/web/r/uichangerforreddit/submit
 // @run-at       document-start
 // @grant        none
 // @require      https://raw.githubusercontent.com/CePur/Reddit-Redirector/refs/heads/main/redditRedirector.js
@@ -15,43 +17,52 @@
 
     try {
         // Step 1: Initialize the variables
-        const isRedirected = sessionStorage.getItem('isRedirected') === 'true';
-        const isReddit = window.location.hostname.includes("reddit.com");
-        const isSubmit = window.location.pathname === '/web/r/ReturnNewReddit/submit';
+        const hasRedirected = sessionStorage.getItem('hasRedirected') === 'true';
 
         // Step 2: Redirect to submit page if not already there
-        if (isReddit && !isSubmit && !isRedirected) {
-            sessionStorage.setItem('isRedirected', true);
+        // `window.top === window.self` ensures the redirection only happens in the main window, and not iframe widgets in some subreddit sidebar
+        if (!hasRedirected && window.location.hostname === 'www.reddit.com' && window.top === window.self) {
+            let currentPage = window.location.pathname + window.location.search;
 
-            const originalPage = window.location.pathname + window.location.search;
-            sessionStorage.setItem('originalPage', originalPage);
+            // Load certain moderator pages in Old New UI
+            if (currentPage.match(/\/mod\/.+\/(queue|rules|log|banned|muted|moderators)\/?/)) {
+                let arrURL = currentPage.split(/\//);
+                if (arrURL[3] === 'queue') {
+                    currentPage = `/r/${arrURL[2]}/about/modqueue/`;
+                } else {
+                    currentPage = `/r/${arrURL[2]}/about/${arrURL[3]}/`;
+                }
+            }
 
-            window.location.replace('https://www.reddit.com/web/r/ReturnNewReddit/submit');
+            sessionStorage.setItem('hasRedirected', 'true');
+            window.location.replace(`https://www.reddit.com/web/r/uichangerforreddit/submit#${currentPage}`);
             return; // Skip the rest of the script until redirected
         }
 
         // Step 3: Perform actions only once on the submit page
-        if (isReddit && isSubmit && isRedirected) {
-
-            window.addEventListener('load', function () {
-
-                // Step 5: Click Click Click
-                document.title = "Redirecting To Cozy Place";
+        if (window.location.pathname === '/web/r/uichangerforreddit/submit') {
+            let currentPage = window.location.hash.slice(1);
+            document.documentElement.style.setProperty('visibility', 'hidden'); // Don't flash the submit page
+            function onLoadEvent() {
+                document.title = "Redirecting to Old New UI...";
 
                 document.querySelector("#AppRouter-main-content button:nth-child(1)")?.click();
                 document.querySelector("#SHORTCUT_FOCUSABLE_DIV header a")?.click();
                 document.querySelector("#SHORTCUT_FOCUSABLE_DIV section footer button:nth-child(1)")?.click();
 
-                // Step 6: Go back to original page
-                const originalPage = sessionStorage.getItem('originalPage')
-                window.history.pushState(null, '', originalPage)
-                window.history.pushState(null, '', originalPage)
-                window.history.back()
-                window.history.go(1)
+                window.history.pushState(null, '', currentPage);
+                window.history.pushState(null, '', currentPage);
+                window.history.back();
+                window.history.go(1);
 
-            });
+                document.documentElement.style.removeProperty('visibility');
+                // Old New UI is a SPA, so 'beforeunload' events only occur when reloading the page
+                window.addEventListener('beforeunload', sessionStorage.removeItem('hasRedirected'));
+                window.removeEventListener('load', onLoadEvent);
+            }
+            window.addEventListener('load', onLoadEvent);
         }
     } catch (error) {
-        alert('An error occurred at Reddit Redirector to Old New UI (Tampermonkey script): ' + error.message);
+        alert('An error occurred when loading Reddit Redirector to Old New UI (Tampermonkey script): ' + error.message);
     }
 })();
